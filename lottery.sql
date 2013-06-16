@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 15, 2013 at 12:33 AM
+-- Generation Time: Jun 16, 2013 at 08:26 PM
 -- Server version: 5.5.27
 -- PHP Version: 5.4.7
 
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS `lotteries` (
   `winner` int(50) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`reason`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=10 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
 
 -- --------------------------------------------------------
 
@@ -53,9 +53,10 @@ CREATE TABLE IF NOT EXISTS `refunds` (
   `ownerID` bigint(100) NOT NULL,
   `ownerName` varchar(200) NOT NULL,
   `ticket` int(200) NOT NULL,
+  `refID` int(15) NOT NULL,
   `refunded` tinyint(5) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3 ;
 
 -- --------------------------------------------------------
 
@@ -71,7 +72,7 @@ CREATE TABLE IF NOT EXISTS `tickets` (
   `ownerName` varchar(100) NOT NULL,
   `ticket` int(200) NOT NULL,
   UNIQUE KEY `id` (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1206 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3 ;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
