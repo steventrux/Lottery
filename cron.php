@@ -20,9 +20,12 @@ $refID = $row['refID'];
 $ownerID = $row['ownerID1'];
 $ownerName = $row['ownerName1'];
 //controlla i versamenti già contabilizzati usando il refID
+
 $sql = "SELECT *
 FROM lottery.tickets
-WHERE lottery.tickets.refID = '$refID'";
+LEFT JOIN lottery.refunds ON lottery.tickets.reason = lottery.refunds.reason
+WHERE lottery.tickets.refID = '$refID'
+OR lottery.refunds.refID = '$refID'";
 $result = $mysqli->query($sql);
 $result1 = $result->fetch_array(MYSQLI_ASSOC);
 $row_cnt = $result->num_rows;
@@ -47,17 +50,34 @@ if ($result_lottery1['ticketLeft'] > $ticketBuyed){
 //registra tutti i biglietti
 //trova l' ultimo biglietto venduto
 $lotto_reason = substr($row['reason'], 0, -1);
-$sql_last_ticket = "SELECT lottery.tickets.ticket
-FROM lottery.tickets
-WHERE lottery.tickets.reason = '$reason'";
-$result_last_ticket = $mysqli->query($sql_last_ticket);
-$row_last_ticket = $result_last_ticket->num_rows;
 
-for($i=($row_last_ticket + 1);$i<(1 + $row_last_ticket + $ticketBuyed);$i++){
+for($i=1;$i<=$ticketBuyed;$i++){
+//random 
+$done = false;
+$max = $result_lottery1['ticketNum'];
+// Keep creating new numbers until we've found one that's unique.
+do {
+    // Generate a random number between 1 and x.
+    $number = rand(1, $max);
+
+    // Check if number exists in database.
+	$sql_unique = "SELECT *
+FROM lottery.tickets
+WHERE lottery.tickets.reason = '$reason'
+AND lottery.tickets.ticket = '$number'";
+$result_unique = $mysqli->query($sql_unique);
+$unique_cnt = $result_unique->num_rows;
+	
+    if($unique_cnt < 1) {
+        $done = true;
+    }
+} while(!$done);
+//end random
+
 //inserisci i biglietti nel database
 $register = "INSERT INTO lottery.tickets (reason, refID, ownerID, ownerName, ticket) VALUES (?,?,?,?,?)";
 $stmt = $mysqli->prepare($register);
-$stmt->bind_param("siisi", $reason, $refID, $ownerID, $ownerName, $i);
+$stmt->bind_param("siisi", $reason, $refID, $ownerID, $ownerName, $number);
 $stmt->execute();
 }
 //aggiorna i biglietti disponibili
@@ -72,22 +92,40 @@ $stmt_ticket_disp->execute();
 //registra i biglietti disponibili e il resto segnalo come rimborso
 //trova l' ultimo biglietto venduto
 $lotto_reason = substr($row['reason'], 0, -1);
-$sql_last_ticket = "SELECT lottery.tickets.ticket
-FROM lottery.tickets
-WHERE lottery.tickets.reason = '$reason'";
-$result_last_ticket = $mysqli->query($sql_last_ticket);
-$row_last_ticket = $result_last_ticket->num_rows; 
 //calcola quanti biglietti saranno da rimborsare
 $ticket_refund = $ticketBuyed - $result_lottery1['ticketLeft'];
 
-for($i=($row_last_ticket + 1);$i<(1 + $row_last_ticket + $result_lottery1['ticketLeft']);$i++){
-//echo $i;
+$maxAvailable = $result_lottery1['ticketLeft'];
+for($i=1;$i<=$maxAvailable;$i++){
+//random 
+$done = false;
+$max = $result_lottery1['ticketNum'];
+// Keep creating new numbers until we've found one that's unique.
+do {
+    // Generate a random number between 1 and x.
+    $number = rand(1, $max);
+
+    // Check if number exists in database.
+	$sql_unique = "SELECT *
+FROM lottery.tickets
+WHERE lottery.tickets.reason = '$reason'
+AND lottery.tickets.ticket = '$number'";
+$result_unique = $mysqli->query($sql_unique);
+$unique_cnt = $result_unique->num_rows;
+	
+    if($unique_cnt < 1) {
+        $done = true;
+    }
+} while(!$done);
+//end random
+
 //inserisci i biglietti nel database
 $register = "INSERT INTO lottery.tickets (reason, refID, ownerID, ownerName, ticket) VALUES (?,?,?,?,?)";
 $stmt = $mysqli->prepare($register);
-$stmt->bind_param("siisi", $reason, $refID, $ownerID, $ownerName, $i);
+$stmt->bind_param("siisi", $reason, $refID, $ownerID, $ownerName, $number);
 $stmt->execute();
 }
+
 //azzera i biglietti disponibili
 $ticket_end = 0;
 $query_ticket_disp = "UPDATE lottery.lotteries SET ticketLeft =? WHERE lottery.lotteries.reason = ?";
@@ -96,9 +134,9 @@ $stmt_ticket_disp->bind_param('is', $ticket_end, $reason);
 $stmt_ticket_disp->execute();
 //registra i biglietti da rimborsare
 $refunded = 0;
-$register_refunds = "INSERT INTO lottery.refunds (reason, ownerID, ownerName, ticket, refunded) VALUES (?,?,?,?,?)";
+$register_refunds = "INSERT INTO lottery.refunds (reason, ownerID, ownerName, ticket, refID, refunded) VALUES (?,?,?,?,?,?)";
 $stmt_refunds = $mysqli->prepare($register_refunds);
-$stmt_refunds->bind_param("sisii", $reason, $ownerID, $ownerName, $ticket_refund, $refunded);
+$stmt_refunds->bind_param('sisiii', $reason, $ownerID, $ownerName, $ticket_refund, $refID, $refunded);
 $stmt_refunds->execute();
 //chiudi la lotteria
 $openLottery = 0;
@@ -107,6 +145,7 @@ $stmt_openLottery = $mysqli->prepare($query_openLottery);
 $stmt_openLottery->bind_param('is', $openLottery, $reason);
 $stmt_openLottery->execute();
 //avvisa via mail della chiusura di una lotteria
+$email = 's.trussardi@gmail.com';
 mail($email, 'Lottery', 'Lottery '.$result_lottery1['name'].' has just been closed. All tickets have been sold!', 'From: lottery@lottery.info');
 }
 }
